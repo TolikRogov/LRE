@@ -13,12 +13,12 @@ StatusCode BufferUnarchiver(StringArray* array) {
 		return LRE_FILE_ERROR;
 
 	size_t cnt = 0;
-	char** cur_str = array->addr + 1;
+	size_t* cur_str = array->addr;
 	for (size_t i = 0; i < array->size; i++) {
 
 		char* ch = (array->buffer + i);
 
-		if (ch == *cur_str && i != 0) {
+		if (*cur_str == i + 1) {
 			fprintf(out, "\n");
 			cur_str++;
 		}
@@ -74,6 +74,11 @@ StatusCode BufferArchiver(StringArray* array) {
 
 	printf("\n Archiving complete \n\n");
 
+	printf("%zu \n", array->count);
+	for (size_t i = 0; i < array->count; i++) {
+		printf("%zu ", *(array->addr + i));
+	}
+
 	return LRE_NO_ERROR;
 }
 
@@ -105,6 +110,12 @@ StatusCode BufferFill(StringArray* array) {
 	if (!array->archived)
 		AddrFill(array);
 
+	printf("%p \n", array->addr);
+	printf("%zu \n", array->count);
+	for (size_t i = 0; i < array->count; i++) {
+		printf("%zu %zu \n", *(array->addr + i), i);
+	}
+
 	return LRE_NO_ERROR;
 }
 
@@ -117,13 +128,19 @@ StatusCode AddrFill(StringArray* array) {
 		}
 	}
 
-	array->addr = (char**)calloc(array->count, sizeof(char*));
+	array->addr = (size_t*)calloc(array->count, sizeof(size_t));
 	if (!array->addr)
 		return LRE_ALLOC_ERROR;
 
+	printf("%p \n", array->addr);
+	size_t cnt = 0;
 	for (size_t i = 0; i < array->size; i++) {
-		if (*(array->buffer + i) == '\0')
-			*(array->addr + i) = (array->buffer + i);
+		cnt++;
+		if (*(array->buffer + i) == '\0') {
+			*(array->addr + i) = --cnt;
+			printf("%zu ", *(array->addr + i));
+			cnt = 0;
+		}
 	}
 
 	return LRE_NO_ERROR;

@@ -17,7 +17,7 @@ struct StringArray {
 	size_t size;
 	char* buffer;
 	size_t count;
-	char** addr;
+	size_t* addr;
 	int archived;
 };
 
