@@ -1,10 +1,11 @@
 #ifndef LRE_ARCHIVER_INCLUDE
 #define LRE_ARCHIVER_INCLUDE
 
-#define LRE_CHECK_ERROR(error)																							 \
-	if (error != LRE_NO_ERROR) {																						\
-		fprintf(stderr, "\n STATUS CODE ERROR: %d, Function: %s, Line: %d\n\n", error, __PRETTY_FUNCTION__, __LINE__);	\
-		return error;																									\
+#define LRE_CHECK_ERROR()																	 \
+	if (errno != LRE_NO_ERROR) {															\
+		fprintf(stderr, "\n STATUS CODE ERROR: %d, File: %s, Line: %d, Function: %s\n\n", 	\
+				errno, __FILE__, __LINE__, __PRETTY_FUNCTION__);							\
+		return (StatusCode)errno;															\
 	}
 
 enum StatusCode {
@@ -21,10 +22,11 @@ struct StringArray {
 	int archived;
 };
 
+StatusCode NewLineCheck(FILE* file, size_t* cur_str, size_t** exp_str);
 StatusCode BufferUnarchiver(StringArray* array);
 StatusCode AddrFill(StringArray* array);
-inline StatusCode Fprint(FILE* file, size_t cnt, char el);
-inline StatusCode FileSize(FILE* file, StringArray* array);
+StatusCode Fprint(FILE* file, size_t cnt, char el);
+StatusCode FileSize(FILE* file, size_t* size);
 StatusCode BufferArchiver(StringArray* array);
 StatusCode BufferFill(StringArray* array);
 StatusCode StringArrayDestruct(StringArray* array);

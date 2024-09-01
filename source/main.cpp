@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "../include/LRE_archiver.hpp"
+#include "../include/LRE.hpp"
 
 // READ:
 //	1) variadic functions, GENERIC
@@ -10,18 +10,18 @@
 
 int main() {
 
-	StatusCode status = LRE_NO_ERROR;
+	errno = 0;
 
 	StringArray array = {};
 
-	status = BufferArchiver(&array);
-	LRE_CHECK_ERROR(status);
+	BufferArchiver(&array);
+	LRE_CHECK_ERROR();
 
-	status = BufferUnarchiver(&array);
-	LRE_CHECK_ERROR(status);
+	BufferUnarchiver(&array);
+	LRE_CHECK_ERROR();
 
-	status = StringArrayDestruct(&array);
-	LRE_CHECK_ERROR(status);
+	StringArrayDestruct(&array);
+	LRE_CHECK_ERROR();
 
 	return 0;
 }

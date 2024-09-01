@@ -1,51 +1,51 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <errno.h>
 
-#include "../include/LRE_archiver.hpp"
+#include "../include/LRE.hpp"
 
 StatusCode BufferUnarchiver(StringArray* array) {
 
-	LRE_CHECK_ERROR(BufferFill(array));
+	BufferFill(array);
+	LRE_CHECK_ERROR();
 
 	FILE* out = fopen("data/unarchived.txt", "w");
 	if (!out)
 		return LRE_FILE_ERROR;
 
 	size_t cnt = 0;
-	size_t* cur_str = array->addr;
+	size_t* exp_str_cnt = array->addr, cur_str_cnt = 0;
 	for (size_t i = 0; i < array->size; i++) {
 
 		char* ch = (array->buffer + i);
 
-		if (*cur_str == i + 1) {
-			fprintf(out, "\n");
-			cur_str++;
-		}
-
 		if (isdigit(*ch))
 			cnt = cnt * 10 + (size_t)(*ch - '0');
 		else {
-			if (!cnt)
+			size_t j = 0;
+			do {
 				fprintf(out, "%c", *ch);
-			else {
-				for (size_t j = 0; j < cnt; j++)
-					fprintf(out, "%c", *ch);
-				cnt = 0;
-			}
+				cur_str_cnt++;
+				NewLineCheck(out, &cur_str_cnt, &exp_str_cnt);
+				LRE_CHECK_ERROR();
+				j++;
+			} while (j < cnt);
+			cnt = 0;
 		}
 	}
 
 	fclose(out);
 
-	printf("\n Unarchiving complete \n\n");
+	printf(" Unarchiving complete \n\n");
 
 	return LRE_NO_ERROR;
 }
 
 StatusCode BufferArchiver(StringArray* array) {
 
-	LRE_CHECK_ERROR(BufferFill(array));
+	BufferFill(array);
+	LRE_CHECK_ERROR();
 
 	array->archived = 1;
 
@@ -64,20 +64,18 @@ StatusCode BufferArchiver(StringArray* array) {
 			cnt++;
 		else {
 			Fprint(out, cnt, prev);
+			LRE_CHECK_ERROR();
+
 			prev = *(array->buffer + i);
 			cnt = 1;
 		}
 	}
 	Fprint(out, cnt, prev);
+	LRE_CHECK_ERROR();
 
 	fclose(out);
 
-	printf("\n Archiving complete \n\n");
-
-	printf("%zu \n", array->count);
-	for (size_t i = 0; i < array->count; i++) {
-		printf("%zu ", *(array->addr + i));
-	}
+	printf(" Archiving complete \n\n");
 
 	return LRE_NO_ERROR;
 }
@@ -97,7 +95,8 @@ StatusCode BufferFill(StringArray* array) {
 	if (!in)
 		return LRE_FILE_ERROR;
 
-	FileSize(in, array);
+	FileSize(in, &array->size);
+	LRE_CHECK_ERROR();
 
 	array->buffer = (char*)calloc(1, array->size);
 	if (!array->buffer)
@@ -107,13 +106,9 @@ StatusCode BufferFill(StringArray* array) {
 
 	fclose(in);
 
-	if (!array->archived)
+	if (!array->archived) {
 		AddrFill(array);
-
-	printf("%p \n", array->addr);
-	printf("%zu \n", array->count);
-	for (size_t i = 0; i < array->count; i++) {
-		printf("%zu %zu \n", *(array->addr + i), i);
+		LRE_CHECK_ERROR();
 	}
 
 	return LRE_NO_ERROR;
@@ -132,21 +127,21 @@ StatusCode AddrFill(StringArray* array) {
 	if (!array->addr)
 		return LRE_ALLOC_ERROR;
 
-	printf("%p \n", array->addr);
-	size_t cnt = 0;
+	size_t cnt = 0, j = 0;
 	for (size_t i = 0; i < array->size; i++) {
 		cnt++;
 		if (*(array->buffer + i) == '\0') {
-			*(array->addr + i) = --cnt;
-			printf("%zu ", *(array->addr + i));
+			*(array->addr + j) = --cnt;
+			j++;
 			cnt = 0;
 		}
 	}
+	printf("\n");
 
 	return LRE_NO_ERROR;
 }
 
-inline StatusCode Fprint(FILE* file, size_t cnt, char el) {
+StatusCode Fprint(FILE* file, size_t cnt, char el) {
 	if (cnt > 1)
 		fprintf(file, "%zu%c", cnt, el);
 	else
@@ -155,11 +150,12 @@ inline StatusCode Fprint(FILE* file, size_t cnt, char el) {
 	return LRE_NO_ERROR;
 }
 
-inline StatusCode FileSize(FILE* file, StringArray* array) {
+StatusCode FileSize(FILE* file, size_t* size) {
 
+	int cur_place = (int)ftell(file);
 	fseek(file, 0, SEEK_END);
-	array->size = (size_t)ftell(file);
-	fseek(file, 0, SEEK_SET);
+	*size = (size_t)ftell(file);
+	fseek(file, 0, cur_place);
 
 	return LRE_NO_ERROR;
 }
@@ -174,5 +170,14 @@ StatusCode StringArrayDestruct(StringArray* array) {
 	free(array->addr);
 	array->addr = NULL;
 
+	return LRE_NO_ERROR;
+}
+
+StatusCode NewLineCheck(FILE* file, size_t* cur_str_cnt, size_t** exp_str_cnt) {
+	if (**exp_str_cnt == *cur_str_cnt) {
+		fprintf(file, "\n");
+		(*exp_str_cnt)++;
+		*cur_str_cnt = 0;
+	}
 	return LRE_NO_ERROR;
 }
