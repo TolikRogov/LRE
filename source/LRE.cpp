@@ -19,7 +19,6 @@ StatusCode BufferUnarchiver(StringArray* array) {
 	for (size_t i = 0; i < array->size; i++) {
 
 		char* ch = (array->buffer + i);
-
 		if (isdigit(*ch))
 			cnt = cnt * 10 + (size_t)(*ch - '0');
 		else {
@@ -27,9 +26,10 @@ StatusCode BufferUnarchiver(StringArray* array) {
 			do {
 				fprintf(out, "%c", *ch);
 				cur_str_cnt++;
+				j++;
+
 				NewLineCheck(out, &cur_str_cnt, &exp_str_cnt);
 				LRE_CHECK_ERROR();
-				j++;
 			} while (j < cnt);
 			cnt = 0;
 		}
@@ -82,7 +82,7 @@ StatusCode BufferArchiver(StringArray* array) {
 
 StatusCode BufferFill(StringArray* array) {
 
-	FILE* in;
+	FILE* in = NULL;
 
 	if (!array->archived)
 		in = fopen("data/input.txt", "r");
@@ -117,6 +117,7 @@ StatusCode BufferFill(StringArray* array) {
 StatusCode AddrFill(StringArray* array) {
 
 	for (size_t i = 0; i < array->size; i++) {
+
 		if (*(array->buffer + i) == '\n') {
 			*(array->buffer + i) = '\0';
 			array->count++;
@@ -129,6 +130,7 @@ StatusCode AddrFill(StringArray* array) {
 
 	size_t cnt = 0, j = 0;
 	for (size_t i = 0; i < array->size; i++) {
+
 		cnt++;
 		if (*(array->buffer + i) == '\0') {
 			*(array->addr + j) = --cnt;
@@ -162,7 +164,9 @@ StatusCode FileSize(FILE* file, size_t* size) {
 
 StatusCode StringArrayDestruct(StringArray* array) {
 
-	array->count = 0;
+	array->count 	= 0;
+	array->size  	= 0;
+	array->archived = 0;
 
 	free(array->buffer);
 	array->buffer = NULL;
